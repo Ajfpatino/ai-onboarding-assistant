@@ -1,11 +1,12 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+    darkMode: "class", // <- enable dark mode with 'dark' class
     content: [
       "./index.html",
-      "./src/**/*.{js,ts,jsx,tsx}", // all your React files
+      "./src/**/*.{js,ts,jsx,tsx}",
     ],
     theme: {
       extend: {},
     },
-    plugins: [],
+    plugins: [require("@tailwindcss/typography")],
   };
