@@ -1,89 +1,38 @@
 import { readGoogleDoc } from "../api/DocsApi/readGoogleDocs";
-import { saveDocument, getStoredDocument } from "../api/DocsApi/documentMemory";
 import { chunkText } from "../api/DocsApi/chunkText";
 import { searchChunks } from "../api/DocsApi/searchChunk";
 
-function removeGoogleDocUrl(message: string): string {
-  return message
-    .replace(/https?:\/\/docs\.google\.com\/document\/d\/[^\s]+/g, "")
-    .trim();
+
+function getGoogleDocId(url: string): string{
+  const parts = url.split("/");
+  const dIndex = parts.indexOf("d");
+  return parts[dIndex + 1];
 }
 
-export async function getGoogleDocPrompt(userMessage: string, accessToken: string): Promise<string> {
-  const hasGoogleDocLink = userMessage.includes("docs.google.com/document");
-  const cleanQuestion = removeGoogleDocUrl(userMessage);
+export async function getGoogleDocPrompt(source: string, userMessage: string, accessToken: string): Promise<string> {
 
-  if (hasGoogleDocLink) {
-    const docIdMatch = userMessage.match(/\/document\/d\/([a-zA-Z0-9-_]+)/);
-    if (!docIdMatch) {
-      throw new Error("Invalid Google Docs URL");
-    }
-
-    const urlMatch = userMessage.match(
-      /https?:\/\/docs\.google\.com\/document\/d\/[a-zA-Z0-9-_]+\/?[^\s]*/,
-    );
-
-    const docId = docIdMatch[1];
-    const docUrl = urlMatch?.[0] ?? "";
-
+ 
+  //if no link in message, check if we have stored document for context
+  if (source != null) {
     
+    const docId = getGoogleDocId(source);
     const docText = await readGoogleDoc(docId, accessToken);
     const chunks = chunkText(docText, 2500, 300);
-
-    saveDocument({
-      id: docId,
-      url: docUrl,
-      fullText: docText,
-      chunks,
-      addedAt: Date.now(),
-    });
-
-    const relevantChunks = searchChunks(chunks, cleanQuestion, 5);
+    const relevantChunks = searchChunks(chunks, userMessage, 5);
 
     const context = relevantChunks
       .map((chunk) => `Chunk ${chunk.index}:\n${chunk.text}`)
       .join("\n\n---\n\n");
 
     return `
-    The user provided a Google Document and it has been processed for retrieval-based question answering.
-    You are answering questions about the document.
-    Use only the provided context.
-    If the answer is not in the context, say you could not find it in the loaded document.
 
-    Document URL: ${docUrl}
+    DOCUMENT URL: ${source}
     Total chunks: ${chunks.length}
 
-    CONTEXT:
-    ${context}
-
-    USER QUESTION:
-    ${cleanQuestion}
-    `.trim();
-  }
-
-  // No new doc link, use previously stored doc
-  const storedDoc = getStoredDocument();
-
-  if (storedDoc) {
-    const relevantChunks = searchChunks(storedDoc.chunks, userMessage, 5);
-
-    const context = relevantChunks
-      .map((chunk) => `Chunk ${chunk.index}:\n${chunk.text}`)
-      .join("\n\n---\n\n");
-
-    return `
-    You are answering questions about a previously loaded Google Document.
-    Use only the provided context.
-    If the answer is not in the context, say you could not find it in the loaded document.
-
-    DOCUMENT URL:
-    ${storedDoc.url}
 
     CONTEXT:
     ${context}
 
-    USER QUESTION:
-    ${cleanQuestion}
     `.trim();
   }
 

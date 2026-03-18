@@ -1,5 +1,6 @@
 // src/lib/lmstudio.ts
 import { LMStudioClient } from "@lmstudio/sdk";
+import { LM_STUDIO_MODEL } from "../../utils/config";
 
 export const client = new LMStudioClient({
   baseUrl: "ws://127.0.0.1:1234",
@@ -12,7 +13,7 @@ export async function getModel() {
   try {
     if (!modelInstance) {
       const llm = client.llm;
-      modelInstance = llm.model("qwen/qwen3-4b-thinking-2507");
+      modelInstance = llm.model(LM_STUDIO_MODEL);
     }
     return modelInstance;
   } catch (error) {

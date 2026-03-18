@@ -32,7 +32,7 @@ export async function readAllDocsFromFolder(
     googleDocs.map(async (file) => {
       try {
         const text = await readGoogleDoc(file.id, accessToken);
-
+        
         return {
           id: file.id,
           name: file.name,
@@ -45,6 +45,8 @@ export async function readAllDocsFromFolder(
       }
     })
   );
+
+  console.log("parsedDocs:", parsedDocs);
 
   return parsedDocs.filter((doc): doc is ParsedGoogleDoc => doc !== null);
 }
