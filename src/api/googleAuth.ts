@@ -1,7 +1,7 @@
 import { gapi } from "gapi-script";
 
-const CLIENT_ID = "544876181637-16ck6ffnsh1n3h23i9qgqblv8ph0r361.apps.googleusercontent.com";
-const API_KEY = "AIzaSyDHtnqJsKSH9K4tffXAVkjT4Q4q_77iZ6s";
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 const DISCOVERY_DOC = [
   "https://docs.googleapis.com/$discovery/rest?version=v1",
@@ -48,7 +48,7 @@ export async function initGoogle(): Promise<void> {
     gapi.load("client", async () => {
       try {
         await gapi.client.init({
-          apiKey: API_KEY,
+          apiKey: GOOGLE_API_KEY,
           discoveryDocs: DISCOVERY_DOC,
         });
         resolve();
@@ -69,7 +69,7 @@ export async function signInGoogle(): Promise<string> {
     }
 
     const client = google.accounts.oauth2.initTokenClient({
-      client_id: CLIENT_ID,
+      client_id: GOOGLE_CLIENT_ID,
       scope: SCOPES,
       callback: (response: TokenResponse) => {
         if (response.error || !response.access_token) {
