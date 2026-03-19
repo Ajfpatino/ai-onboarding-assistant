@@ -6,7 +6,6 @@ export const client = new LMStudioClient({
   baseUrl: "ws://127.0.0.1:1234",
 });
 
-// Get the model - need to await client.llm
 let modelInstance: ReturnType<Awaited<typeof client.llm>["model"]> | null = null;
 
 export async function getModel() {

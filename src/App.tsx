@@ -39,6 +39,7 @@ const GOOGLE_DOC_REGEX =
     setLoading(true);
 
     try {
+      //get sources from localStorage
       const sources = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]") as string[];
       let accessToken = getAccessToken();
 
