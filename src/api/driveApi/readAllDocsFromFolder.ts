@@ -10,6 +10,7 @@ export interface ParsedGoogleDoc {
   name: string;
   path: string;
   text: string;
+  link: string;
 }
 
 export async function readAllDocsFromFolder(
@@ -38,6 +39,8 @@ export async function readAllDocsFromFolder(
           name: file.name,
           path: file.path,
           text,
+          link: `https://docs.google.com/document/d/${file.id}/edit`,
+
         };
       } catch (error) {
         console.error(`Failed to read doc: ${file.name}`, error);

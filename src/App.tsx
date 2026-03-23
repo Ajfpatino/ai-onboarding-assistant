@@ -6,10 +6,12 @@ import { Icon } from "@iconify/react";
 
 import  { getGoogleDocPrompt }  from "./tools/GoogleDocsTool"
 import MarkdownRenderer from "./components/markdowRenderer";
-import { getGoogleDrivePrompt } from "./tools/GoogleDriveTool";
+import { getFilesFromDriveTool, getGoogleDrivePrompt } from "./tools/GoogleDriveTool";
 import { getAccessToken, initGoogle, signInGoogle } from "./api/googleAuth";
 import { ACTIVE_PROVIDER, GEMINI_MODEL, LM_STUDIO_MODEL, STORAGE_KEY } from "./utils/config";
 import SourceModal from "./components/sourceModal";
+
+
 interface Message {
   text: string;
   sender: "user" | "agent";
@@ -57,6 +59,12 @@ const GOOGLE_DOC_REGEX =
 
         for (const source of sources) {
           if (GOOGLE_DRIVE_FOLDER_REGEX.test(source)) { 
+
+            // const drivePrompt2 = await getFilesFromDriveTool(source, accessToken);
+            // const driveFilesArray = JSON.parse(drivePrompt2);
+            // localStorage.setItem("Drive_Files", JSON.stringify(driveFilesArray));
+            // console.log("Drive Prompt 2:", drivePrompt2);
+
             const drivePrompt = await getGoogleDrivePrompt(source, accessToken);
             sourceContext += `\n\n[Google Drive Source]\n${drivePrompt}`;
 
@@ -79,7 +87,80 @@ const GOOGLE_DOC_REGEX =
         { text: aiText, sender: "agent" },
       ]);
     } catch (error) {
-      console.error(error);
+      console.error(error); 
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          text: error instanceof Error
+            ? error.message
+            : "Error connecting to  AI agent.",
+          sender: "agent",
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSend2 = async () => {
+    if (!input.trim()) return;
+
+    const userMessage = input.trim();
+    let sourceContext = "";
+
+    setMessages((prev) => [...prev, { text: userMessage, sender: "user" }]);
+    setInput("");
+    setLoading(true);
+
+    try {
+
+      const sources = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]") as string[];
+      let accessToken = getAccessToken();
+
+      if (!accessToken) {
+        await initGoogle();
+        accessToken = await signInGoogle();
+      }
+
+      if (!accessToken) {
+        throw new Error("Google login is required to read Docs or Drive files.");
+      }
+
+      if (sources.length > 0) {
+
+        for (const source of sources) {
+          if (GOOGLE_DRIVE_FOLDER_REGEX.test(source)) { 
+            
+            const drivePrompt2 = await getFilesFromDriveTool(source, accessToken);
+            const driveFilesArray = JSON.parse(drivePrompt2);
+            localStorage.setItem("Drive_Files", JSON.stringify(driveFilesArray));
+            console.log("Drive Prompt 2:", drivePrompt2);
+
+            const driveFiles = localStorage.getItem("Drive_Files");
+           
+
+            //const drivePrompt = await getGoogleDrivePrompt(source, accessToken);
+            sourceContext += `\n\n[Google Drive Files]\n${driveFiles}`;
+
+            
+          }
+        };
+      }
+
+      const prompt = sourceContext
+        ? `Use the following source context to answer the user use the summary 
+        to find the specific document you need.\n${sourceContext}\n\nUser message:\n${userMessage}`
+        : userMessage;
+
+      const aiText = await sendMessageToAI(prompt, messages);
+
+      setMessages((prev) => [
+        ...prev,
+        { text: aiText, sender: "agent" },
+      ]);
+    } catch (error) {
+      console.error(error); 
 
       setMessages((prev) => [
         ...prev,

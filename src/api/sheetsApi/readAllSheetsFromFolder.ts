@@ -10,6 +10,7 @@ export interface ParsedGoogleSheet {
   name: string;
   path: string;
   text: string;
+  link: string;
 }
 
 export async function readAllSheetsFromFolder(
@@ -38,6 +39,8 @@ export async function readAllSheetsFromFolder(
           name: file.name,
           path: file.path,
           text,
+          link: `https://docs.google.com/spreadsheets/d/${file.id}/edit`,
+
         };
       } catch (error) {
         console.error(`Failed to read sheet: ${file.name}`, error);
